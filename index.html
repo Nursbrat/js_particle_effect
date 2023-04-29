@@ -7,15 +7,11 @@
     <title>particle-effect</title>
   </head>
   <body>
-    <div class="container"><canvas></canvas></div>
+   <canvas></canvas>
   </body>
   <script>
     window.addEventListener("load", () => {
       const canvas = document.querySelector("canvas");
-      const container = document.querySelector("container");
-
-      container.style.display = "flex";
-      container.style.justifyContent = "center";
       const ctx = canvas.getContext("2d");
       const particles = [];
       const img = new Image();

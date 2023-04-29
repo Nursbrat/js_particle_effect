@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>particle-effect</title>
+  </head>
+  <body>
+    <div class="container"><canvas></canvas></div>
+  </body>
+  <script>
+    window.addEventListener("load", () => {
+      const canvas = document.querySelector("canvas");
+      const container = document.querySelector("container");
+
+      container.style.display = "flex";
+      container.style.justifyContent = "center";
+      const ctx = canvas.getContext("2d");
+      const particles = [];
+      const img = new Image();
+      img.src = "img.jpg";
+
+      let mouseX = Infinity;
+      let mouseY = Infinity;
+
+      const PARTICLE_DIAMETER = 6;
+      const REPEL_RADIUS = 70;
+      const REPEL_SPEED = 6;
+      const RETURN_SPEED = 0.5;
+
+      canvas.addEventListener("mousemove", () => {
+        mouseX = event.offsetX;
+        mouseY = event.offsetY;
+      });
+
+      canvas.addEventListener("mouseleave", () => {
+        mouseX = Infinity;
+        mouseY = Infinity;
+      });
+
+      img.addEventListener("load", () => {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+
+        const imgData = ctx.getImageData(0, 0, img.width, img.height).data;
+        const numsRow = Math.round(img.width / PARTICLE_DIAMETER);
+        const numsCol = Math.round(img.height / PARTICLE_DIAMETER);
+
+        for (let row = 0; row < numsRow; row++) {
+          for (let col = 0; col < numsCol; col++) {
+            const pixelIndex =
+              (row * PARTICLE_DIAMETER * img.width + col * PARTICLE_DIAMETER) *
+              4;
+            const red = imgData[pixelIndex];
+            const green = imgData[pixelIndex + 1];
+            const blue = imgData[pixelIndex + 2];
+            const alpha = imgData[pixelIndex + 3];
+
+            particles.push({
+              x: col * PARTICLE_DIAMETER + PARTICLE_DIAMETER / 2,
+              y: row * PARTICLE_DIAMETER + PARTICLE_DIAMETER / 2,
+              originX: col * PARTICLE_DIAMETER + PARTICLE_DIAMETER / 2,
+              originY: row * PARTICLE_DIAMETER + PARTICLE_DIAMETER / 2,
+              color: `rgba(${red},${green},${blue},${alpha / 255})`,
+            });
+          }
+        }
+
+        drawParticles();
+      });
+
+      function drawParticles() {
+        updateParticles();
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        particles.forEach((particle) => {
+          ctx.beginPath();
+          ctx.arc(
+            particle.x,
+            particle.y,
+            PARTICLE_DIAMETER / 2,
+            0,
+            2 * Math.PI
+          );
+          ctx.fillStyle = particle.color;
+          ctx.fill();
+        });
+        requestAnimationFrame(drawParticles);
+      }
+
+      function updateParticles() {
+        particles.forEach((particle) => {
+          const distanceFromMouseX = mouseX - particle.x;
+          const distanceFromMouseY = mouseY - particle.y;
+          const distanceFromMouse = Math.sqrt(
+            distanceFromMouseX ** 2 + distanceFromMouseY ** 2
+          );
+
+          if (distanceFromMouse < REPEL_RADIUS) {
+            const angle = Math.atan2(distanceFromMouseY, distanceFromMouseX);
+            const force = (REPEL_RADIUS - distanceFromMouse) / REPEL_RADIUS;
+            const mouseX = Math.cos(angle) * force * REPEL_SPEED;
+            const mouseY = Math.sin(angle) * force * REPEL_SPEED;
+
+            particle.x -= mouseX;
+            particle.y -= mouseY;
+          } else if (
+            particle.x !== particle.originX ||
+            particle.y !== particle.originY
+          ) {
+            const distanceFromOriginX = particle.originX - particle.x;
+            const distanceFromOriginY = particle.originY - particle.y;
+            const distanceFromOrigin = Math.sqrt(
+              distanceFromOriginX ** 2 + distanceFromOriginY ** 2
+            );
+            const angle = Math.atan2(distanceFromOriginY, distanceFromOriginX);
+            const mouseX = Math.cos(angle) * distanceFromOrigin * RETURN_SPEED;
+            const mouseY = Math.sin(angle) * distanceFromOrigin * RETURN_SPEED;
+
+            particle.x += mouseX;
+            particle.y += mouseY;
+          }
+        });
+      }
+    });
+  </script>
+</html>
